@@ -1,0 +1,146 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+ {
+	// "$schema": "node_modules/wrangler/config-schema.json",
+	"name": "vibecodes-space",
+	"main": "worker/index.ts",
+	"compatibility_date": "2025-08-10",
+	"compatibility_flags": ["nodejs_compat"],
+    "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+    },
+	"assets": {
+		"directory": "dist",
+		"not_found_handling": "single-page-application",
+		// "run_worker_first": ["!/src/*", "!/api/docs/*"],
+        "run_worker_first": true,
+        "binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true,
+        "head_sampling_rate": 1
+	},
+  "unsafe": {
+    "bindings": [
+        {
+            "name": "API_RATE_LIMITER",
+            "type": "ratelimit",
+            "namespace_id": "2101",
+            "simple": { "limit": 10000, "period": 60 }
+        },
+        {
+            "name": "AUTH_RATE_LIMITER",
+            "type": "ratelimit",
+            "namespace_id": "2102",
+            "simple": { "limit": 1000, "period": 60 }
+        }
+    ]
+  },
+	/**
+	 * Bindings
+	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
+	 * databases, object storage, AI inference, real-time communication and more.
+	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	 */
+	"ai": {
+		"binding": "AI",
+        "remote": true
+	},
+	"images": {
+		"binding": "IMAGES"
+	},
+    "dispatch_namespaces": [
+        {
+            "binding": "DISPATCHER",
+            "namespace": "vibesdk-default-namespace",
+            "remote": true
+        }
+    ],
+	"containers": [
+		{
+			"class_name": "UserAppSandboxService",
+			"image": "./SandboxDockerfile",
+            // Altering max_instances value will have no effect. Please use the MAX_SANDBOX_INSTANCES var instead.
+			"max_instances": 10,
+            // ATTENTION: Altering instance_type value will have no effect. Please use the SANDBOX_INSTANCE_TYPE var instead.
+            "instance_type": "standard",
+            "rollout_step_percentage": 100
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "vibesdk-db",
+			"database_id": "8f93b9bc-8fe0-442e-80ce-83e324fac789",
+			"migrations_dir": "migrations",
+			"remote": true
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "CodeGeneratorAgent",
+				"name": "CodeGenObject"
+			},
+            {
+                "class_name": "UserAppSandboxService",
+                "name": "Sandbox"
+            },
+            {
+                "class_name": "DORateLimitStore",
+                "name": "DORateLimitStore"
+            }
+		]
+	},
+    "r2_buckets": [
+      {
+        "binding": "TEMPLATES_BUCKET",
+        "bucket_name": "vibesdk",
+        "remote": true
+      }
+    ],
+    "kv_namespaces": [
+        {
+            "binding": "VibecoderStore",
+            "id": "973f4889b9f3429d92142232ccf916d2",
+            "remote": true
+        }
+    ],
+	"migrations": [
+		{
+			"new_sqlite_classes": [
+				"CodeGeneratorAgent",
+				"UserAppSandboxService"
+			],
+			"tag": "v1"
+		},
+        {
+            "new_sqlite_classes": [
+                "DORateLimitStore"
+            ],
+            "tag": "v2"
+        }
+	],
+	"routes": [
+        {
+            "pattern": "vibecodes.space",
+            "custom_domain": true
+        },
+        {
+            "pattern": "*vibecodes.space/*",
+            "custom_domain": false,
+            "zone_id": "71094e4bbec3f32ada982a49e8cd2d32"
+        }
+    ],
+	"vars": {
+        "TEMPLATES_REPOSITORY": "https://github.com/cloudflare/vibesdk-templates",
+        "DISPATCH_NAMESPACE": "vibesdk-default-namespace",
+        "ENABLE_READ_REPLICAS": "true",
+        "CLOUDFLARE_AI_GATEWAY": "vibesdk-gateway",
+        "MAX_SANDBOX_INSTANCES": "10"
+    },
+	"workers_dev": false,
+	"preview_urls": false
+}
