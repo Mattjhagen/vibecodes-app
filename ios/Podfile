@@ -1,0 +1,26 @@
+# Uncomment the next line to define a global platform for your project
+platform :ios, '17.0'
+
+target 'App' do
+  # Comment the next line if you don't want to use dynamic frameworks
+  use_frameworks!
+
+  # Pods for App
+  pod 'Capacitor'
+  pod 'CapacitorCordova'
+  pod 'CapacitorApp'
+  pod 'CapacitorBrowser'
+  pod 'CapacitorHaptics'
+  pod 'CapacitorKeyboard'
+  pod 'CapacitorStatusBar'
+
+  target 'AppTests' do
+    inherit! :search_paths
+    # Pods for testing
+  end
+
+  target 'AppUITests' do
+    # Pods for testing
+  end
+
+end
